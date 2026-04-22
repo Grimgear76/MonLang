@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ghc Main.hs -o Main)",
+      "Bash(where ghc *)",
+      "Read(//c/Users/Jonathan/AppData/Roaming/ghcup/**)",
+      "PowerShell(cmd /c \"where ghc\" 2>&1)",
+      "PowerShell(cmd /c \"where stack\" 2>&1)",
+      "PowerShell(cmd /c \"where cabal\" 2>&1)"
+    ]
+  }
+}
