@@ -71,7 +71,7 @@ module Main where
 --
 --  AST: data Stats = Stats Int Int Int Int  (hp atk def spd)
 --   <stat-list>     ::= <stat>
---                     | <stat> <stat-list>
+--                     | <stat> <stat-list> .
 --
 --   <stat>          ::= "hp"      <num>
 --                     | "attack"  <num>

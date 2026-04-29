@@ -1,12 +1,8 @@
+{- HLINT ignore "Use guards" -}
 module Main where
 
--- MonLang: A Pokémon-inspired domain-specific language
---
--- ═══════════════════════════════════════════════════════════
+
 --  MonLang — Context-Free Grammar (CFG)
---  Every rule below corresponds directly to an AST type or
---  constructor in the Haskell code that follows.
--- ═══════════════════════════════════════════════════════════
 --
 --  AST: data Program = Program [Stmt]
 --   <program>       ::= <stmt-list>
@@ -22,7 +18,7 @@ module Main where
 --                     | <apply-stmt>
 --                     | <battle-stmt>
 --
---  ── Declarations ───────────────────────────────────────────
+--  Declarations ---------------------------------------------
 --
 --  AST: data Decl = MonsterDecl ... | MoveDecl ...
 --   <decl>          ::= <monster-decl>
@@ -52,7 +48,7 @@ module Main where
 --                       "accuracy" <num>
 --                       "type"     <type>
 --
---  ── Statements ─────────────────────────────────────────────
+--  Statements -----------------------------------------------
 --
 --  AST: PrintStmt MonsterName
 --   <print-stmt>    ::= "print" <mon-id>
@@ -63,7 +59,7 @@ module Main where
 --  AST: Battle MonsterName MonsterName
 --   <battle-stmt>   ::= "battle" <mon-id> <mon-id>
 --
---  ── Shared Non-Terminals ───────────────────────────────────
+--  Shared Non-Terminals ----------------------------------------------
 --
 --  AST: data Type = Fire | Water | Electric | Grass | Normal
 --   <type>          ::= "Fire" | "Water" | "Electric"
@@ -83,9 +79,9 @@ module Main where
 --
 --   <num>           ::= digit+
 --
--- ═══════════════════════════════════════════════════════════
+-- ------------------------------------------------------------
 --  Concrete Syntax Examples
--- ═══════════════════════════════════════════════════════════
+-- ------------------------------------------------------------
 --
 --   monster Pikachu {            -- MonsterDecl
 --     type Electric              --   Type
@@ -107,13 +103,13 @@ module Main where
 --   apply Pikachu Thunderbolt    -- Apply
 --   battle Pikachu Squirtle      -- Battle
 
--- ─── Type Aliases ────────────────────────────────────────────────────────────
+-- Type Aliases 
 
 type MonsterName = String
 type MoveName    = String
 type Ability     = String
 
--- ─── Element Types ────────────────────────────────────────────────────────────
+-- Element Types 
 
 data Type = Fire | Water | Electric | Grass | Normal
   deriving Eq
@@ -125,7 +121,7 @@ instance Show Type where
   show Grass    = "Grass"
   show Normal   = "Normal"
 
--- ─── Stats ───────────────────────────────────────────────────────────────────
+-- Stats 
 
 data Stats = Stats Int Int Int Int   -- hp attack defense speed
 
@@ -134,7 +130,7 @@ instance Show Stats where
     "HP "  ++ show h ++ " / ATK " ++ show a ++
     " / DEF " ++ show d ++ " / SPD " ++ show s
 
--- ─── AST: Declarations ───────────────────────────────────────────────────────
+--  AST: Declarations 
 
 data Decl
   = MonsterDecl MonsterName Type Stats Ability [MoveName]
@@ -153,7 +149,7 @@ instance Show Decl where
     ", accuracy " ++ show acc ++
     ", type " ++ show t ++ " }"
 
--- ─── AST: Statements ─────────────────────────────────────────────────────────
+-- AST: Statements 
 
 data Stmt
   = DeclStmt  Decl
@@ -167,14 +163,14 @@ instance Show Stmt where
   show (Apply mn mv)   = "apply " ++ mn ++ " " ++ mv
   show (Battle n1 n2)  = "battle " ++ n1 ++ " " ++ n2
 
--- ─── AST: Program ────────────────────────────────────────────────────────────
+-- AST: Program 
 
 data Program = Program [Stmt]
 
 instance Show Program where
   show (Program stmts) = unlines (map show stmts)
 
--- ─── Runtime Values ──────────────────────────────────────────────────────────
+-- Runtime Values --------------------------------------------
 
 data Monster = Monster MonsterName Type Stats Ability [MoveName]
 
@@ -194,14 +190,14 @@ instance Show Move where
     " | Power: " ++ show pow ++
     " | Accuracy: " ++ show acc ++ "%)"
 
--- ─── Helpers ─────────────────────────────────────────────────────────────────
+-- Helpers ------------------------------------------------
 
 showNames :: [String] -> String
 showNames []     = "(none)"
 showNames [x]    = x
 showNames (x:xs) = x ++ ", " ++ showNames xs
 
--- ─── Environment ─────────────────────────────────────────────────────────────
+-- Environment -------------------------------
 
 type MonsterEnv = [(MonsterName, Monster)]
 type MoveEnv    = [(MoveName, Move)]
@@ -210,7 +206,7 @@ type Env        = (MonsterEnv, MoveEnv)
 emptyEnv :: Env
 emptyEnv = ([], [])
 
--- ─── Pretty Printer ──────────────────────────────────────────────────────────
+-- Pretty Printer -------------------------------------------
 
 printProgram :: Program -> IO ()
 printProgram (Program stmts) = do
@@ -218,15 +214,17 @@ printProgram (Program stmts) = do
   mapM_ (\s -> putStrLn ("  " ++ show s)) stmts
   putStrLn "+---------------------------------+"
 
--- ─── Evaluator ───────────────────────────────────────────────────────────────
+-- Evaluator --------------------------------------------------------------
 
-evalProgram :: Program -> IO ()
-evalProgram (Program stmts) = evalStmts stmts emptyEnv
+evalProgram :: Program -> IO ()              
+evalProgram (Program stmts) = evalStmts stmts emptyEnv  -- start evaluating statements with an empty environment
 
-evalStmts :: [Stmt] -> Env -> IO ()
-evalStmts [] _ = return ()
-evalStmts (s:ss) env@(mEnv, mvEnv) =
-  case s of
+evalStmts :: [Stmt] -> Env -> IO () 
+evalStmts [] _ = return ()             --base case: no more statements to evaluate
+
+evalStmts (s:ss) env@(mEnv, mvEnv) =   -- recursive case: evaluate the first statement, then continue with the rest
+  case s of    -- pattern match on the type of statement is being evaluated
+
     DeclStmt (MonsterDecl name t stats ab moves) ->
       evalStmts ss ((name, Monster name t stats ab moves) : mEnv, mvEnv)
 
@@ -239,7 +237,7 @@ evalStmts (s:ss) env@(mEnv, mvEnv) =
         Nothing -> putStrLn ("Error: monster \"" ++ name ++ "\" not found")
                    >> evalStmts ss env
 
-    Apply monName mvName ->
+    Apply monName mvName ->     -- look up the monster and move in the environment, then print the result of using the move
       case (lookup monName mEnv, lookup mvName mvEnv) of
         (Just mon, Just mv) ->
           putStrLn (useMove mon mv) >> evalStmts ss env
@@ -250,7 +248,7 @@ evalStmts (s:ss) env@(mEnv, mvEnv) =
           putStrLn ("Error: move \"" ++ mvName ++ "\" not found")
           >> evalStmts ss env
 
-    Battle n1 n2 ->
+    Battle n1 n2 ->         -- look up both monsters in the environment, then run the battle if both are found
       case (lookup n1 mEnv, lookup n2 mEnv) of
         (Just m1, Just m2) -> runBattle m1 m2 mvEnv >> evalStmts ss env
         (Nothing, _)       -> putStrLn ("Error: monster \"" ++ n1 ++ "\" not found")
@@ -258,12 +256,12 @@ evalStmts (s:ss) env@(mEnv, mvEnv) =
         (_, Nothing)       -> putStrLn ("Error: monster \"" ++ n2 ++ "\" not found")
                               >> evalStmts ss env
 
-useMove :: Monster -> Move -> String
+useMove :: Monster -> Move -> String  -- create a string describing the monster using the move, including power and accuracy
 useMove (Monster mname _ _ _ _) (Move mvname pow acc _) =
   mname ++ " used " ++ mvname ++ "! " ++
   "(Power: " ++ show pow ++ ", Accuracy: " ++ show acc ++ "%)"
 
--- ─── Battle System ───────────────────────────────────────────────────────────
+-- Battle System ------------------------------------------------------------
 
 -- Type effectiveness: returns 2.0 (super), 0.5 (not very), or 1.0 (neutral)
 typeEffectiveness :: Type -> Type -> Double
@@ -278,12 +276,15 @@ typeEffectiveness mvType defType = case (mvType, defType) of
   _                   -> 1.0
 
 -- Damage = (attacker ATK * move power) / (defender DEF * 5), scaled by type
+
 calcDamage :: Int -> MoveName -> Type -> Int -> MoveEnv -> Int
+
 calcDamage atk mvName defType def mvEnv =
-  case lookup mvName mvEnv of
+
+  case lookup mvName mvEnv of  -- look up the move in the environment to get its power and type
     Nothing              -> 0
     Just (Move _ pow _ mvType) ->
-      let base = (atk * pow) `div` (def * 5)
+      let base = (atk * pow) `div` (def * 5)  -- base damage calculation
           eff  = typeEffectiveness mvType defType
       in  floor (fromIntegral base * eff)
 
@@ -291,7 +292,9 @@ calcDamage atk mvName defType def mvEnv =
 runBattle :: Monster -> Monster -> MoveEnv -> IO ()
 runBattle m1@(Monster n1 t1 (Stats hp1 atk1 def1 spd1) _ mvs1)
           m2@(Monster n2 t2 (Stats hp2 atk2 def2 spd2) _ mvs2)
-          mvEnv = do
+          mvEnv = do    
+-- Print battle header, then start the battle loop with the faster monster attacking first
+
   putStrLn ("*** Battle: " ++ n1 ++ " vs " ++ n2 ++ " ***")
   if spd1 >= spd2
     then battleLoop n1 t1 hp1 atk1 def1 mvs1
@@ -303,25 +306,27 @@ runBattle m1@(Monster n1 t1 (Stats hp1 atk1 def1 spd1) _ mvs1)
 battleLoop :: String -> Type -> Int -> Int -> Int -> [MoveName]
            -> String -> Type -> Int -> Int -> Int -> [MoveName]
            -> MoveEnv -> IO ()
-battleLoop an at ahp aatk adef amvs dn dt dhp datk ddef dmvs mvEnv
-  | ahp <= 0  = putStrLn (an ++ " fainted! " ++ dn ++ " wins!")
+
+battleLoop an at ahp aatk adef amvs dn dt dhp datk ddef dmvs mvEnv  -- attacker/defender names, types, HP, ATK, DEF, moves, and the move environment
+
+  | ahp <= 0  = putStrLn (an ++ " fainted! " ++ dn ++ " wins!") -- if the attacker's HP is 0 or less, they faint and the defender wins
   | dhp <= 0  = putStrLn (dn ++ " fainted! " ++ an ++ " wins!")
   | null amvs = putStrLn (an ++ " has no moves! " ++ dn ++ " wins!")
-  | otherwise = do
-      let mv   = head amvs
+  | otherwise = do -- attacker uses the first move in their list, calculate damage, print the result, then swap roles for the next turn
+      let mv   = head amvs 
           dmg  = calcDamage aatk mv dt ddef mvEnv
           dhp' = max 0 (dhp - dmg)
-          mvType = case lookup mv mvEnv of
+          mvType = case lookup mv mvEnv of -- look up the move type in the environment for the effectiveness message
                      Just (Move _ _ _ t) -> t
                      Nothing             -> Normal
           eff    = typeEffectiveness mvType dt
-          effMsg = if eff > 1.0 then " It's super effective!"
+          effMsg = if eff > 1.0 then " It's super effective!" -- add a message if the move is super effective, not very effective, or neutral
                    else if eff < 1.0 then " It's not very effective..."
                    else ""
       putStrLn (an ++ " used " ++ mv ++ "!" ++ effMsg
                 ++ " (" ++ show dmg ++ " dmg) "
                 ++ dn ++ " HP: " ++ show dhp')
-      battleLoop dn dt dhp' datk ddef dmvs
+      battleLoop dn dt dhp' datk ddef dmvs      -- swap roles for the next turn, with the defender becoming the attacker and vice versa
                  an at ahp  aatk adef amvs mvEnv
 
 -- ─── Example Programs ────────────────────────────────────────────────────────
@@ -357,23 +362,23 @@ prog3 = Program
   , Battle "Charmander" "Bulbasaur"
   ]
 
--- ─── Main ────────────────────────────────────────────────────────────────────
+-- Main
 
 main :: IO ()
 main = do
-  putStrLn "=== MonLang Interpreter ===\n"
+  putStrLn "--- MonLang Interpreter ---\n"
 
-  putStrLn "--- Program 1 (source) ---"
+  putStrLn "--- Program 1 ---"
   printProgram prog1
   putStrLn "--- Evaluating Program 1 ---"
   evalProgram prog1
 
-  putStrLn "\n--- Program 2 (source) ---"
+  putStrLn "\n--- Program 2 ---"
   printProgram prog2
   putStrLn "--- Evaluating Program 2 ---"
   evalProgram prog2
 
-  putStrLn "\n--- Program 3 (source) ---"
+  putStrLn "\n--- Program 3 ---"
   printProgram prog3
   putStrLn "--- Evaluating Program 3 ---"
   evalProgram prog3
